@@ -1,1 +1,1 @@
-# TechArena
+# TechArena Cangjie Concurrency Challenge
