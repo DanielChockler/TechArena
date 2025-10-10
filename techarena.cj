@@ -2,8 +2,11 @@ import std.console.*
 import std.collection.*
 
 class KeyValue {
-    //private let KeyValue: Array<(Option<String>, Option<Int64>)> = Array<Option<String>, Option<Int64>>(10^6,  item: (None, None)) 
+    public var bucketArray: Array<(Option<String>, Option<Int64>)> = Array<(Option<String>, Option<Int64>)>()
 
+    public init(){
+        this.bucketArray = Array<(Option<String>, Option<Int64>)>(1000000, item: (None, None)) 
+    }
 
     public func hashTheKey(k: String): Int64{
         let n: Int64 = 1000000007
@@ -28,6 +31,6 @@ class KeyValue {
 }
 
 main(){
-    
+    println(KeyValue().bucketArray.size)
     println(KeyValue().hashTheKey("zzzzzzzzzzxzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"))
 }
