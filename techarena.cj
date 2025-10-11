@@ -1,5 +1,5 @@
 import std.console.*
-import std.regex.{Regex, split}
+import std.regex.*
 import std.collection.*
 
 class KeyValue {
@@ -69,12 +69,21 @@ class KeyValue {
 
     static public func deserialise(s: String): Unit{
        
-
-        let pattern = Regex("[£$]")
-
-        var result: Array<String>  = split(pattern, s)  
         
-        println(result)
+        let pattern1 = Regex("\\$.*?")
+
+        var tuples: Array<String>  = Matcher(pattern1, s).split()
+        
+        for (k in tuples ){
+            let pattern2 = Regex("£.*?")
+
+
+
+            var value= Matcher(pattern2, k).split()
+
+            println(value)
+        } 
+        
 
         /*
         let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -101,14 +110,18 @@ class KeyValue {
                     found = true
                     break
                 }
+                j = j +1
             }
 
             result = result * 64 + digit
+            i = i + 1
         }
 
         if (is_N){
             result = - result
         }
+
+        print(result)
 
         */
         
@@ -165,8 +178,10 @@ main(){
 
     let ser: String = kV.serialize()
     println(ser)
+    
+    KeyValue.deserialise(ser)
 
-    //let nV = KeyValue.deserialise(ser)
+    //nV = KeyValue.deserialise(ser)
 
    // nV.getKeys()
 }
