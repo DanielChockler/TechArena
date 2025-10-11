@@ -16,24 +16,24 @@ private class Entry {
 }
 
 class KeyValue {
-    private let BUCKET_COUNT = 1000003
-    private let LOCK_STRIPE_SIZE = 128
+    private let bucketCount = 1000003
+    private let lockStripeSize = 128
 
     private var bucketArray: Array<Option<Entry>>
     private var keyArray: ArrayList<String> = ArrayList<String>()
     private let locks: ArrayList<ReentrantMutex>
 
     public init() {
-        this.bucketArray = Array<Option<Entry>>(BUCKET_COUNT, item: None)
+        this.bucketArray = Array<Option<Entry>>(bucketCount, item: None)
         this.locks = ArrayList<ReentrantMutex>()
-        for (i in 0 .. LOCK_STRIPE_SIZE - 1) {
+        for (i in 0 .. lockStripeSize - 1) {
             this.locks.append(ReentrantMutex())
         }
     }
 
     public func put(k: String, v: Int64): Unit {
         let index = this.hashTheKey(k)
-        let lockIndex = index % LOCK_STRIPE_SIZE
+        let lockIndex = index % lockStripeSize
         var keyExisted = false
         
         this.locks[lockIndex].lock()
@@ -64,7 +64,7 @@ class KeyValue {
 
     public func get(k: String): Option<Int64> {
         let index = this.hashTheKey(k)
-        let lockIndex = index % LOCK_STRIPE_SIZE
+        let lockIndex = index % lockStripeSize
         var result: Option<Int64> = None
 
         this.locks[lockIndex].lock()
@@ -97,10 +97,9 @@ class KeyValue {
             hash = (hash + code * power) % n
             power = (power * p) % n
         }
-        return hash % BUCKET_COUNT
+        return hash % bucketCount
     }
     
-    // --- Sub-problem 2: Your Serialization/Deserialization Logic ---
     public func getKeys(): Array<String> { 
         return Array<String>(this.keyArray) 
     }
@@ -185,7 +184,20 @@ class KeyValue {
     }
 }
 
-// REMEMBER TO DELETE OR COMMENT OUT THIS main() FUNCTION BEFORE SUBMITTING!
+/*
 main() {
-    
+    let kV = KeyValue()
+    kV.put("ABC", 123)
+    kV.put("DEF", 456)
+
+    println(kV.get("ABC"))
+    println(kV.get("DEF"))
+
+    let serialized = kV.serialize()
+    println(serialized)
+
+    let deserialisedKV = KeyValue.deserialise(serialized)
+    println(deserialisedKV.get("ABC"))
+    println(deserialisedKV.get("DEF"))
 }
+*/
