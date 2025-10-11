@@ -3,6 +3,8 @@ import std.regex.*
 import std.collection.*
 
 class KeyValue {
+
+    
     public var bucketArray: Array<(Option<String>, Option<Int64>)> = Array<(Option<String>, Option<Int64>)>()
     private var keyArray: ArrayList<String> = ArrayList<String>()
 
@@ -25,7 +27,7 @@ class KeyValue {
     public func getKeys(): Array<String> {
         return Array<String>(keyArray)
     }
-    public func to_base64(v: Int64): String {
+    private func to_base64(v: Int64): String {
         let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
         var result: String = ""
         var temp: Int64 = v
@@ -99,9 +101,10 @@ class KeyValue {
                 while(i< (values[1]).size){
                     var c = (values[1])[i]
                     var digit: Int64 = 0
-                    var found: Bool = false
+               
 
                     var j: Int64 = 0
+                    
                     while(j < 64){
                         if (b64Chars[j]== c){
                             digit = j
@@ -136,7 +139,7 @@ class KeyValue {
     }
 
 
-    public func hashTheKey(k: String): Int64{
+    private func hashTheKey(k: String): Int64{
         let n: Int64 = 1000000007
         let p: Int64 = 67
 
@@ -165,8 +168,6 @@ main(){
 
     
 
-    let index: Int64 = kV.hashTheKey("helloBabes")
-    println(index)
 
     kV.put("helloBabes", 673)
     kV.put("test", 232312312312)
@@ -174,9 +175,6 @@ main(){
     kV.put("djsjhdlfklkasdf", -1231231234)
     kV.put("fjkhdsf", -12)
 
-    println("Control")
-    print(kV.bucketArray[index][0])
-    println(kV.bucketArray[index][1])
 
     println("Test Get")
     print(kV.get("helloBabes"))
@@ -190,6 +188,7 @@ main(){
 
     println(nV.getKeys())
     println(nV.get("helloBabes"))
+    println(nV.get("fjkhdsf"))
 
     //nV = KeyValue.deserialise(ser)
 
