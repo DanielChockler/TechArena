@@ -138,7 +138,7 @@ class KeyValue {
         return serializedStr
     }
 
-    static public func deserialise(s: String): KeyValue{
+    static public func deserialize(s: String): KeyValue{
         let newKV: KeyValue = KeyValue()
         let pattern1 = Regex("\\$.*?")
         var tuples: Array<String>  = Matcher(pattern1, s).split()
