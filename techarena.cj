@@ -1,5 +1,6 @@
 import std.console.*
 import std.regex.*
+import std.sync.*
 import std.collection.*
 
 class KeyValue {
@@ -12,7 +13,7 @@ class KeyValue {
         this.bucketArray = Array<(Option<String>, Option<Int64>)>(1000000, item: (None, None)) 
     }
 
-    public func put(k: String, v: Int64): Unit {
+    public func put(k: String, v: Int64): Future<Unit> {
         let index: Int64 = hashTheKey(k)
 
         this.keyArray.append(k)
@@ -20,7 +21,7 @@ class KeyValue {
 
     }
 
-    public func get(k: String): Option<Int64>{
+    public func get(k: String): Future<Option<Int64>>{
         return bucketArray[hashTheKey(k)][1]
     }
 
