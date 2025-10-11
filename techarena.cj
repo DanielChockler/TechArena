@@ -1,5 +1,9 @@
 import std.console.*
+<<<<<<< HEAD
 import std.regex.*
+=======
+import std.regex.{Regex, split}
+>>>>>>> 48b84717277465179ff5e3cd7f52540247d8b651
 import std.collection.*
 
 class KeyValue {
@@ -67,6 +71,7 @@ class KeyValue {
 
     }
 
+<<<<<<< HEAD
     static public func deserialise(s: String): KeyValue{
        
         let self: KeyValue = KeyValue()
@@ -131,6 +136,52 @@ class KeyValue {
         return self
         
 
+=======
+    static public func deserialise(s: String): Unit{
+       
+
+        let pattern = Regex("[£$]")
+
+        var result: Array<String>  = split(pattern, s)  
+        
+        println(result)
+
+        /*
+        let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        var result: Int64 = 0
+        var start_index: Int64 = 0
+        var is_N = false 
+
+        if (Rune(s[0]) == r'-'){
+            is_N = true
+            start_index = 1
+        }
+
+        var i = start_index
+
+        while(i< s.size){
+            var c = s[i]
+            var digit: Int64 = 0
+            var found: Bool = false
+
+            var j: Int64 = 0
+            while(j < 64){
+                if (b64Chars[j]== c){
+                    digit = j
+                    found = true
+                    break
+                }
+            }
+
+            result = result * 64 + digit
+        }
+
+        if (is_N){
+            result = - result
+        }
+
+        */
+>>>>>>> 48b84717277465179ff5e3cd7f52540247d8b651
         
         
     }
@@ -185,6 +236,7 @@ main(){
 
     let ser: String = kV.serialize()
     println(ser)
+<<<<<<< HEAD
     
     let nV: KeyValue = KeyValue.deserialise(ser)
 
@@ -192,6 +244,10 @@ main(){
     println(nV.get("helloBabes"))
 
     //nV = KeyValue.deserialise(ser)
+=======
+
+    //let nV = KeyValue.deserialise(ser)
+>>>>>>> 48b84717277465179ff5e3cd7f52540247d8b651
 
    // nV.getKeys()
 }
