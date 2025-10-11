@@ -10,21 +10,7 @@ private class Entry {
     var next: Option<Entry>
     public init(key: String, value: Int64, next: Option<Entry>) {
         this.key = key
-        this.value = value
-        this.next = next
-    }
-}
-
-class KeyValue {
-    private let bucketCount = 1000003
-    private let lockStripeSize = 128
-
-    private var bucketArray: Array<Option<Entry>>
-    private var keyArray: ArrayList<String> = ArrayList<String>()
-    private let locks: ArrayList<ReentrantMutex>
-
-    public init() {
-        this.bucketArray = Array<Option<Entry>>(bucketCount, item: None)
+         item: None)
         this.locks = ArrayList<ReentrantMutex>()
         for (i in 0 .. lockStripeSize - 1) {
             this.locks.append(ReentrantMutex())
@@ -183,21 +169,3 @@ class KeyValue {
         return newKV
     }
 }
-
-/*
-main() {
-    let kV = KeyValue()
-    kV.put("ABC", 123)
-    kV.put("DEF", 456)
-
-    println(kV.get("ABC"))
-    println(kV.get("DEF"))
-
-    let serialized = kV.serialize()
-    println(serialized)
-
-    let deserialisedKV = KeyValue.deserialise(serialized)
-    println(deserialisedKV.get("ABC"))
-    println(deserialisedKV.get("DEF"))
-}
-*/
