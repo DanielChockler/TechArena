@@ -69,74 +69,69 @@ class KeyValue {
 
     }
 
-    static public func deserialise(s: String): KeyValue{
-       
-        let self: KeyValue = KeyValue()
+    static public func deserialise(s: String): Unit{
         
+        let kv = KeyValue()
         let pattern1 = Regex("\\$.*?")
 
         var tuples: Array<String>  = Matcher(pattern1, s).split()
         
-        for (k in tuples ){
-
+        for (k in tuples){
+            var result: Int64 = 0
+            var is_negative = false
+            var start_index: Int64 = 0
             if (k.size != 0){
-                let pattern2 = Regex("£.*?")
+            let pattern2 = Regex("£.*?")
 
 
 
-                var values= Matcher(pattern2, k).split()
-
-                let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-                var result: Int64 = 0
-                var start_index: Int64 = 0
-                var is_N = false 
-
-                if (Rune((values[1])[0]) == r'-'){
-                    is_N = true
-                    start_index = 1
-                }
-
-                var i = start_index
-
-                while(i< (values[1]).size){
-                    var c = (values[1])[i]
-                    var digit: Int64 = 0
-               
-
-                    var j: Int64 = 0
-                    
-                    while(j < 64){
-                        if (b64Chars[j]== c){
-                            digit = j
-                            found = true
-                            break
-                        }
-                        j = j +1
-                    }
-   
-
-
-                    result = result * 64 + digit
-                    i = i + 1
-                }
-
-                if (is_N){
-                    result = - result
-                }
-
-
-
-                self.put(values[0], result)
-
+            var value= Matcher(pattern2, k).split()
+            println(value[1])
+            var base64_str = value[1]
+            // Check for negative prefix
+            if (base64_str.size > 0 && base64_str[0] == 45) { // 'N' ASCII
+                is_negative = true
+                start_index = 1
             }
-        } 
+            
+            // Single loop - no nested loops
+            var i = start_index
+            while (i < base64_str.size) {
+                var ch_code = base64_str[i]
+                var digit: UInt8 = 0
+                
+                // Direct character code mapping - no inner loop
+                if (ch_code >= 65 && ch_code <= 90) {        // A-Z: 65-90 → 0-25
+                    digit = ch_code - 65
+                } else if (ch_code >= 97 && ch_code <= 122) { // a-z: 97-122 → 26-51
+                    digit = ch_code - 71                     // 26 + (ch_code - 97) = ch_code - 71
+                } else if (ch_code >= 48 && ch_code <= 57) {  // 0-9: 48-57 → 52-61
+                    digit = ch_code + 4                      // 52 + (ch_code - 48) = ch_code + 4
+                } else if (ch_code == 43) {                   // + → 62
+                    digit = 62
+                } else if (ch_code == 47) {                   // / → 63
+                    digit = 63
+                } 
+                
+                result = result * 64 + Int64(digit)
+                i = i + 1
+            }
+            
+            if (is_negative) {
+                result = -result
+            }
+            println(result)
+                } 
+    
+    
+        }
+    
 
-        return self
-        
 
         
         
-    }
+        
+}
 
 
     private func hashTheKey(k: String): Int64{
