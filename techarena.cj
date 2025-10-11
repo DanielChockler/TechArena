@@ -1,4 +1,5 @@
 import std.console.*
+import std.regex.{Regex, split}
 import std.collection.*
 
 class KeyValue {
@@ -50,13 +51,70 @@ class KeyValue {
 
     }
 
+    
+
+
     public func serialize() : String{
         var serializedStr: String = ""
+        
+        for (i in keyArray){
+           if (let Some(value) <- get(i)){
+            serializedStr = serializedStr + "$" + i + "£" + to_base64(value) 
+           }
+        }
+
         return serializedStr
 
-        
-
     }
+
+    static public func deserialise(s: String): Unit{
+       
+
+        let pattern = Regex("[£$]")
+
+        var result: Array<String>  = split(pattern, s)  
+        
+        println(result)
+
+        /*
+        let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        var result: Int64 = 0
+        var start_index: Int64 = 0
+        var is_N = false 
+
+        if (Rune(s[0]) == r'-'){
+            is_N = true
+            start_index = 1
+        }
+
+        var i = start_index
+
+        while(i< s.size){
+            var c = s[i]
+            var digit: Int64 = 0
+            var found: Bool = false
+
+            var j: Int64 = 0
+            while(j < 64){
+                if (b64Chars[j]== c){
+                    digit = j
+                    found = true
+                    break
+                }
+            }
+
+            result = result * 64 + digit
+        }
+
+        if (is_N){
+            result = - result
+        }
+
+        */
+        
+        
+    }
+
 
     public func hashTheKey(k: String): Int64{
         let n: Int64 = 1000000007
@@ -90,7 +148,11 @@ main(){
     let index: Int64 = kV.hashTheKey("helloBabes")
     println(index)
 
-    kV.put("helloBabes", 67)
+    kV.put("helloBabes", 673)
+    kV.put("test", 232312312312)
+    kV.put("laksjdflk", 2343212323123)
+    kV.put("djsjhdlfklkasdf", -1231231234)
+    kV.put("fjkhdsf", -12)
 
     println("Control")
     print(kV.bucketArray[index][0])
@@ -101,8 +163,10 @@ main(){
 
     println(kV.getKeys())
 
-    println(kV.to_base64(98732498734))
-    println(kV.to_base64(-982734982734))
+    let ser: String = kV.serialize()
+    println(ser)
 
-    
+    //let nV = KeyValue.deserialise(ser)
+
+   // nV.getKeys()
 }
