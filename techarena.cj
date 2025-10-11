@@ -67,63 +67,70 @@ class KeyValue {
 
     }
 
-    static public func deserialise(s: String): Unit{
+    static public func deserialise(s: String): KeyValue{
        
+        let self: KeyValue = KeyValue()
         
         let pattern1 = Regex("\\$.*?")
 
         var tuples: Array<String>  = Matcher(pattern1, s).split()
         
         for (k in tuples ){
-            let pattern2 = Regex("£.*?")
+
+            if (k.size != 0){
+                let pattern2 = Regex("£.*?")
 
 
 
-            var value= Matcher(pattern2, k).split()
+                var values= Matcher(pattern2, k).split()
 
-            println(value)
+                let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+                var result: Int64 = 0
+                var start_index: Int64 = 0
+                var is_N = false 
+
+                if (Rune((values[1])[0]) == r'-'){
+                    is_N = true
+                    start_index = 1
+                }
+
+                var i = start_index
+
+                while(i< (values[1]).size){
+                    var c = (values[1])[i]
+                    var digit: Int64 = 0
+                    var found: Bool = false
+
+                    var j: Int64 = 0
+                    while(j < 64){
+                        if (b64Chars[j]== c){
+                            digit = j
+                            found = true
+                            break
+                        }
+                        j = j +1
+                    }
+   
+
+
+                    result = result * 64 + digit
+                    i = i + 1
+                }
+
+                if (is_N){
+                    result = - result
+                }
+
+
+
+                self.put(values[0], result)
+
+            }
         } 
+
+        return self
         
 
-        /*
-        let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        var result: Int64 = 0
-        var start_index: Int64 = 0
-        var is_N = false 
-
-        if (Rune(s[0]) == r'-'){
-            is_N = true
-            start_index = 1
-        }
-
-        var i = start_index
-
-        while(i< s.size){
-            var c = s[i]
-            var digit: Int64 = 0
-            var found: Bool = false
-
-            var j: Int64 = 0
-            while(j < 64){
-                if (b64Chars[j]== c){
-                    digit = j
-                    found = true
-                    break
-                }
-                j = j +1
-            }
-
-            result = result * 64 + digit
-            i = i + 1
-        }
-
-        if (is_N){
-            result = - result
-        }
-
-        print(result)
-
-        */
         
         
     }
@@ -179,7 +186,10 @@ main(){
     let ser: String = kV.serialize()
     println(ser)
     
-    KeyValue.deserialise(ser)
+    let nV: KeyValue = KeyValue.deserialise(ser)
+
+    println(nV.getKeys())
+    println(nV.get("helloBabes"))
 
     //nV = KeyValue.deserialise(ser)
 
