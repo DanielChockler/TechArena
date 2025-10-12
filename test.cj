@@ -22,6 +22,7 @@ class KeyValue {
     private var bucketArray: Array<Option<Entry>>
     private var keyArray: ArrayList<String> = ArrayList<String>()
     private let locks: ArrayList<ReentrantMutex>
+    private let keyArrayLock: ReentrantMutex = ReentrantMutex()
 
     public init() {
         this.bucketArray = Array<Option<Entry>>(bucketCount, item: None)
@@ -39,24 +40,21 @@ class KeyValue {
         this.locks[lockIndex].lock()
         
         var current = this.bucketArray[index]
-        var shouldContinue = true
-        while (shouldContinue) {
-            if (let Some(entry) <- current) {
-                if (entry.key == k) {
-                    entry.value = v
-                    keyExisted = true
-                    break
-                }
-                current = entry.next
-            } else {
-                shouldContinue = false
+        while (let Some(entry) <- current) {
+            if (entry.key == k) {
+                entry.value = v
+                keyExisted = true
+                break
             }
+            current = entry.next
         }
 
         if (!keyExisted) {
             let newEntry = Entry(k, v, this.bucketArray[index])
             this.bucketArray[index] = Some(newEntry)
+            this.keyArrayLock.lock()
             this.keyArray.append(k)
+            this.keyArrayLock.unlock()
         }
         
         this.locks[lockIndex].unlock()
@@ -68,21 +66,14 @@ class KeyValue {
         var result: Option<Int64> = None
 
         this.locks[lockIndex].lock()
-
         var current = this.bucketArray[index]
-        var shouldContinue = true
-        while (shouldContinue) {
-            if (let Some(entry) <- current) {
-                if (entry.key == k) {
-                    result = Some(entry.value)
-                    break
-                }
-                current = entry.next
-            } else {
-                shouldContinue = false
+        while (let Some(entry) <- current) {
+            if (entry.key == k) {
+                result = Some(entry.value)
+                break
             }
+            current = entry.next
         }
-
         this.locks[lockIndex].unlock()
         return result
     }
@@ -97,7 +88,11 @@ class KeyValue {
             hash = (hash + code * power) % n
             power = (power * p) % n
         }
-        return hash % bucketCount
+        var finalIndex = hash % bucketCount
+        if (finalIndex < 0) {
+            finalIndex = finalIndex + bucketCount
+        }
+        return finalIndex
     }
     
     public func getKeys(): Array<String> { 
@@ -105,99 +100,70 @@ class KeyValue {
     }
 
     public func to_base64(v: Int64): String {
-        let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-        var result: String = ""
-        var temp: Int64 = v
-        var is_N: Bool = false
-
-        if (temp == 0){
-            return "A"
-        } else if (temp < 0) {
-            is_N = true
-            temp = -temp
-        }
-        while (temp > 0){
-            var remainder: Int64 = temp % 64
+        let b64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        if (v == 0) { return "A" }
+        var result = ""
+        var temp = v
+        var is_N = false
+        if (temp < 0) { is_N = true; temp = -temp; }
+        while (temp > 0) {
+            let remainder = temp % 64
             result = Rune(b64Chars[remainder]).toString() + result 
             temp = temp / 64
         }
-
-        if (is_N){
-            result = "-" + result
-        }
+        if (is_N) { result = "-" + result; }
         return result
     }
 
-    public func serialize() : String{
-        var serializedStr: String = ""
-        for (i in this.keyArray){
-           if (let Some(value) <- this.get(i)){
-            serializedStr = serializedStr + "$" + i + "£" + this.to_base64(value) 
+    public func serialize() : String {
+        let parts = ArrayList<String>()
+        for (key in this.keyArray) {
+           if (let Some(value) <- this.get(key)) {
+                parts.append(";")
+                parts.append(key)
+                parts.append(":")
+                parts.append(this.to_base64(value))
            }
         }
-        return serializedStr
+        return String.join(Array<String>(parts), delimiter: "")
     }
 
-    static public func deserialize(s: String): KeyValue{
-        let newKV: KeyValue = KeyValue()
-        let pattern1 = Regex("\\$.*?")
-        var tuples: Array<String>  = Matcher(pattern1, s).split()
+    static public func deserialize(s: String): KeyValue {
+        let newKV = KeyValue()
+        if (s.isEmpty()) { return newKV }
         
-        for (k in tuples ){
-            if (k.size != 0){
-                let pattern2 = Regex("£.*?")
-                var values= Matcher(pattern2, k).split()
+        let chunks = Matcher(Regex(";"), s).split()
+        
+        for (chunk in chunks) {
+            if (chunk.isEmpty()) { continue }
 
-                let b64Chars: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-                var result: Int64 = 0
-                var start_index: Int64 = 0
-                var is_N = false 
+            let parts = Matcher(Regex(":"), chunk).split()
+            if (parts.size != 2) { continue }
 
-                if (Rune((values[1])[0]) == r'-'){
-                    is_N = true
-                    start_index = 1
-                }
+            let key = parts[0]
+            var valueStr = parts[1]
 
-                var i = start_index
-                while(i< (values[1]).size){
-                    var c = (values[1])[i]
-                    var digit: Int64 = 0
-                    var j: Int64 = 0
-                    while(j < 64){
-                        if (b64Chars[j]== c){
-                            digit = j
-                            break
-                        }
-                        j = j + 1
-                    }
-                    result = result * 64 + digit
-                    i = i + 1
-                }
+            let b64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            var result: Int64 = 0
+            var is_N = false
 
-                if (is_N){
-                    result = -result
-                }
-                newKV.put(values[0], result)
+            if (valueStr.size > 0 && Rune(valueStr[0]) == r'-') {
+                is_N = true
+                valueStr = valueStr[1..]
             }
+
+            for (c in valueStr) {
+                var digit: Int64 = 0; var j: Int64 = 0;
+                while (j < 64) {
+                    if (b64Chars[j] == c) { digit = j; break; }
+                    j = j + 1
+                }
+                result = result * 64 + digit
+            }
+
+            if (is_N) { result = -result; }
+            newKV.put(key, result)
         } 
         return newKV
     }
 }
-
-/*
-main() {
-    let kV = KeyValue()
-    kV.put("ABC", 123)
-    kV.put("DEF", 456)
-
-    println(kV.get("ABC"))
-    println(kV.get("DEF"))
-
-    let serialized = kV.serialize()
-    println(serialized)
-
-    let deserialisedKV = KeyValue.deserialise(serialized)
-    println(deserialisedKV.get("ABC"))
-    println(deserialisedKV.get("DEF"))
-}
-*/
