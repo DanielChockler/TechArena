@@ -10,7 +10,6 @@ private class Entry {
     var next: Option<Entry>
     public init(key: String, value: Int64, next: Option<Entry>) {
         this.key = key
-         item: None)
         this.locks = ArrayList<ReentrantMutex>()
         for (i in 0 .. lockStripeSize - 1) {
             this.locks.append(ReentrantMutex())
@@ -168,4 +167,20 @@ private class Entry {
         } 
         return newKV
     }
+}
+
+
+main(){
+
+    let kv = KeyValue()
+
+
+    kv.put("this", 2323)
+    printlkn(kv.get("this"))
+
+    println(kv.getKeys())
+
+    println(kv.serialize())
+
+    println(KeyValue().deserialize(kv.serialize()))
 }
