@@ -7,17 +7,15 @@ import std.sync.*
 private class Entry {
     let key: String
     var value: Int64
-    var next: Option<Entry>
-    public init(key: String, value: Int64, next: Option<Entry>) {
+    public init(key: String, value: Int64) {
         this.key = key
         this.value = value
-        this.next = next
     }
 }
 
 class KeyValue {
     private let bucketCount = 1000003
-    private let lockStripeSize = 128
+    private let lockStripeSize = 1024
 
     private var bucketArray: Array<Option<Entry>>
     private var keyArray: ArrayList<String> = ArrayList<String>()
@@ -27,7 +25,7 @@ class KeyValue {
     public init() {
         this.bucketArray = Array<Option<Entry>>(bucketCount, item: None)
         this.locks = ArrayList<ReentrantMutex>()
-        for (i in 0 .. lockStripeSize - 1) {
+        for (_ in 0 .. lockStripeSize - 1) {
             this.locks.append(ReentrantMutex())
         }
     }
@@ -38,26 +36,32 @@ class KeyValue {
         var keyExisted = false
         
         this.locks[lockIndex].lock()
-        
+
         var current = this.bucketArray[index]
-        while (let Some(entry) <- current) {
-            if (entry.key == k) {
+
+        if (let Some(entry) <- current){
+            if(entry.key == k){
                 entry.value = v
                 keyExisted = true
-                break
+                this.locks[lockIndex].unlock()
             }
-            current = entry.next
         }
 
+
+        // Try to deal with the whole system lock first no?
         if (!keyExisted) {
-            let newEntry = Entry(k, v, this.bucketArray[index])
+            let newEntry = Entry(k, v)
             this.bucketArray[index] = Some(newEntry)
+            this.locks[lockIndex].unlock()
             this.keyArrayLock.lock()
             this.keyArray.append(k)
             this.keyArrayLock.unlock()
         }
+
+        //Got rid of the redundant while loop lil bro
         
-        this.locks[lockIndex].unlock()
+
+       
     }
 
     public func get(k: String): Option<Int64> {
@@ -67,18 +71,21 @@ class KeyValue {
 
         this.locks[lockIndex].lock()
         var current = this.bucketArray[index]
-        while (let Some(entry) <- current) {
-            if (entry.key == k) {
+
+        if (let Some(entry) <-current){
+            if (entry.key == k){
                 result = Some(entry.value)
-                break
             }
-            current = entry.next
+            else{
+                result = None
+            }
         }
+
         this.locks[lockIndex].unlock()
         return result
     }
 
-    public func hashTheKey(k: String): Int64 {
+    private func hashTheKey(k: String): Int64 {
         let n: Int64 = 1000000007
         let p: Int64 = 67
         var hash: Int64 = 0
@@ -95,11 +102,12 @@ class KeyValue {
         return finalIndex
     }
     
-    public func getKeys(): Array<String> { 
-        return Array<String>(this.keyArray) 
+    public func getKeys(): ArrayList<String> { 
+        
+        return this.keyArray
     }
 
-    public func to_base64(v: Int64): String {
+    private func to_base64(v: Int64): String {
         let b64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
         if (v == 0) { return "A" }
         var result = ""
@@ -116,6 +124,7 @@ class KeyValue {
     }
 
     public func serialize() : String {
+        this.keyArrayLock.lock()
         let parts = ArrayList<String>()
         for (key in this.keyArray) {
            if (let Some(value) <- this.get(key)) {
@@ -125,6 +134,7 @@ class KeyValue {
                 parts.append(this.to_base64(value))
            }
         }
+        this.keyArrayLock.unlock()
         return String.join(Array<String>(parts), delimiter: "")
     }
 
@@ -167,3 +177,4 @@ class KeyValue {
         return newKV
     }
 }
+
